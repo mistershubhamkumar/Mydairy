@@ -1,0 +1,209 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "Private user profile and personalization preferences for My Diary.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "Owner Firebase Auth UID." },
+        "displayName": { "type": "string", "description": "User display name (1-60 chars)." },
+        "email": { "type": "string", "description": "User email address (0-120 chars)." },
+        "bio": { "type": "string", "description": "Personal diary bio (0-300 chars)." },
+        "avatarKey": { "type": "string", "description": "Avatar identifier or URL (1-300 chars)." },
+        "selectedThemeId": { "type": "string", "description": "Selected theme identifier (1-40 chars)." },
+        "selectedFontId": { "type": "string", "description": "Selected font identifier (1-40 chars)." },
+        "mascotId": { "type": "string", "description": "Selected mascot identifier (1-40 chars)." },
+        "animationsEnabled": { "type": "boolean", "description": "Whether floating animations are enabled." },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Server timestamp (FieldValue.serverTimestamp())." },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Server timestamp (FieldValue.serverTimestamp())." }
+      },
+      "required": ["userId", "displayName", "email", "bio", "avatarKey", "selectedThemeId", "selectedFontId", "mascotId", "animationsEnabled", "createdAt", "updatedAt"]
+    },
+    "DiaryEntry": {
+      "title": "DiaryEntry",
+      "description": "Personal diary entry with rich text formatting, mood, media attachments, privacy lock, and soft-delete recycle bin state.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "Owner Firebase Auth UID." },
+        "title": { "type": "string", "description": "Entry title (0-150 chars)." },
+        "content": { "type": "string", "description": "Full diary text (0-50000 chars)." },
+        "mood": { "type": "string", "enum": ["HAPPY", "SAD", "EXCITED", "RELAXED", "ANGRY", "ROMANTIC", "LONELY", "GRATEFUL", "ANXIOUS", "MOTIVATED"] },
+        "moodScore": { "type": "integer", "description": "Numeric mood score 1..10." },
+        "categoryId": { "type": "string", "description": "Category ID (1-60 chars)." },
+        "dateKey": { "type": "string", "description": "Calendar date key YYYY-MM-DD." },
+        "entryTimeMillis": { "type": "integer", "description": "Custom entry date-time epoch millis." },
+        "tags": { "type": "array", "description": "Bounded list of up to 15 tag strings." },
+        "photoUris": { "type": "array", "description": "Bounded list of up to 20 attached photo/video URIs." },
+        "locationLabel": { "type": "string", "description": "Optional location label (0-120 chars)." },
+        "stickerIds": { "type": "array", "description": "Bounded list of up to 15 sticker tokens." },
+        "backgroundStyle": { "type": "string", "description": "Entry paper background style (1-40 chars)." },
+        "fontStyle": { "type": "string", "description": "Entry font style (1-40 chars)." },
+        "textColorHex": { "type": "string", "description": "Entry text color hex (0-12 chars)." },
+        "textAlign": { "type": "string", "enum": ["START", "CENTER", "END"] },
+        "fontSizeSp": { "type": "integer", "description": "Font size in sp (12..28)." },
+        "boldEnabled": { "type": "boolean" },
+        "italicEnabled": { "type": "boolean" },
+        "underlineEnabled": { "type": "boolean" },
+        "highlightEnabled": { "type": "boolean" },
+        "favorite": { "type": "boolean" },
+        "privateLocked": { "type": "boolean" },
+        "deleted": { "type": "boolean" },
+        "deletedAtMillis": { "type": "integer" },
+        "wordCount": { "type": "integer" },
+        "charCount": { "type": "integer" },
+        "reminderTimeMillis": { "type": "integer" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Server timestamp (FieldValue.serverTimestamp())." },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Server timestamp (FieldValue.serverTimestamp())." }
+      },
+      "required": [
+        "userId", "title", "content", "mood", "moodScore", "categoryId", "dateKey",
+        "entryTimeMillis", "tags", "photoUris", "locationLabel", "stickerIds",
+        "backgroundStyle", "fontStyle", "textColorHex", "textAlign", "fontSizeSp",
+        "boldEnabled", "italicEnabled", "underlineEnabled", "highlightEnabled",
+        "favorite", "privateLocked", "deleted", "deletedAtMillis",
+        "wordCount", "charCount", "reminderTimeMillis", "createdAt", "updatedAt"
+      ]
+    },
+    "MoodLog": {
+      "title": "MoodLog",
+      "description": "Mood check-in log supporting multiple check-ins per day and mood charts.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "mood": { "type": "string", "enum": ["HAPPY", "SAD", "EXCITED", "RELAXED", "ANGRY", "ROMANTIC", "LONELY", "GRATEFUL", "ANXIOUS", "MOTIVATED"] },
+        "score": { "type": "integer" },
+        "note": { "type": "string" },
+        "dateKey": { "type": "string" },
+        "loggedAtMillis": { "type": "integer" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Server timestamp (FieldValue.serverTimestamp())." },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Server timestamp (FieldValue.serverTimestamp())." }
+      },
+      "required": ["userId", "mood", "score", "note", "dateKey", "loggedAtMillis", "createdAt", "updatedAt"]
+    },
+    "DreamEntry": {
+      "title": "DreamEntry",
+      "description": "Magical night-sky Dream Journal record.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "category": { "type": "string", "enum": ["BEAUTIFUL", "NIGHTMARE", "ROMANTIC", "FANTASY", "WEIRD", "LUCID"] },
+        "mood": { "type": "string", "enum": ["HAPPY", "SAD", "EXCITED", "RELAXED", "ANGRY", "ROMANTIC", "LONELY", "GRATEFUL", "ANXIOUS", "MOTIVATED"] },
+        "dateKey": { "type": "string" },
+        "tags": { "type": "array" },
+        "imageUris": { "type": "array" },
+        "favorite": { "type": "boolean" },
+        "deleted": { "type": "boolean" },
+        "deletedAtMillis": { "type": "integer" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Server timestamp (FieldValue.serverTimestamp())." },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Server timestamp (FieldValue.serverTimestamp())." }
+      },
+      "required": ["userId", "title", "description", "category", "mood", "dateKey", "tags", "imageUris", "favorite", "deleted", "deletedAtMillis", "createdAt", "updatedAt"]
+    },
+    "VoiceNote": {
+      "title": "VoiceNote",
+      "description": "Voice Diary recording metadata linked to user's private local audio file.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "filePath": { "type": "string" },
+        "durationSeconds": { "type": "integer" },
+        "dateKey": { "type": "string" },
+        "recordedAtMillis": { "type": "integer" },
+        "favorite": { "type": "boolean" },
+        "deleted": { "type": "boolean" },
+        "deletedAtMillis": { "type": "integer" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Server timestamp (FieldValue.serverTimestamp())." },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Server timestamp (FieldValue.serverTimestamp())." }
+      },
+      "required": ["userId", "title", "description", "filePath", "durationSeconds", "dateKey", "recordedAtMillis", "favorite", "deleted", "deletedAtMillis", "createdAt", "updatedAt"]
+    },
+    "PhotoMemory": {
+      "title": "PhotoMemory",
+      "description": "Photo & Video Memory gallery item with album grouping, caption, tags, and recycle bin support.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "mediaUri": { "type": "string" },
+        "mediaType": { "type": "string", "enum": ["PHOTO", "VIDEO"] },
+        "albumName": { "type": "string" },
+        "caption": { "type": "string" },
+        "dateKey": { "type": "string" },
+        "tags": { "type": "array" },
+        "favorite": { "type": "boolean" },
+        "deleted": { "type": "boolean" },
+        "deletedAtMillis": { "type": "integer" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Server timestamp (FieldValue.serverTimestamp())." },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Server timestamp (FieldValue.serverTimestamp())." }
+      },
+      "required": ["userId", "mediaUri", "mediaType", "albumName", "caption", "dateKey", "tags", "favorite", "deleted", "deletedAtMillis", "createdAt", "updatedAt"]
+    },
+    "DiaryCategory": {
+      "title": "DiaryCategory",
+      "description": "Custom diary category with icon, accent color, and cover style.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "name": { "type": "string" },
+        "iconKey": { "type": "string" },
+        "colorHex": { "type": "string" },
+        "coverStyle": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Server timestamp (FieldValue.serverTimestamp())." },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Server timestamp (FieldValue.serverTimestamp())." }
+      },
+      "required": ["userId", "name", "iconKey", "colorHex", "coverStyle", "createdAt", "updatedAt"]
+    },
+    "BackupRecord": {
+      "title": "BackupRecord",
+      "description": "Audit log of cloud backups and file exports.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "label": { "type": "string" },
+        "format": { "type": "string", "enum": ["CLOUD", "JSON", "TXT", "PDF"] },
+        "entryCount": { "type": "integer" },
+        "dreamCount": { "type": "integer" },
+        "moodCount": { "type": "integer" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Server timestamp (FieldValue.serverTimestamp())." }
+      },
+      "required": ["userId", "label", "format", "entryCount", "dreamCount", "moodCount", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/UserProfile" },
+      "description": "Private user profile and personalization settings."
+    },
+    "/users/{userId}/entries/{entryId}": {
+      "schema": { "$ref": "#/entities/DiaryEntry" },
+      "description": "Private diary entries belonging exclusively to userId."
+    },
+    "/users/{userId}/moods/{moodId}": {
+      "schema": { "$ref": "#/entities/MoodLog" },
+      "description": "Mood check-ins belonging exclusively to userId."
+    },
+    "/users/{userId}/dreams/{dreamId}": {
+      "schema": { "$ref": "#/entities/DreamEntry" },
+      "description": "Dream journal entries belonging exclusively to userId."
+    },
+    "/users/{userId}/voiceNotes/{voiceId}": {
+      "schema": { "$ref": "#/entities/VoiceNote" },
+      "description": "Voice diary recordings belonging exclusively to userId."
+    },
+    "/users/{userId}/memories/{memoryId}": {
+      "schema": { "$ref": "#/entities/PhotoMemory" },
+      "description": "Photo and video gallery memories belonging exclusively to userId."
+    },
+    "/users/{userId}/categories/{categoryId}": {
+      "schema": { "$ref": "#/entities/DiaryCategory" },
+      "description": "Custom diary categories belonging exclusively to userId."
+    },
+    "/users/{userId}/backups/{backupId}": {
+      "schema": { "$ref": "#/entities/BackupRecord" },
+      "description": "Backup and export history belonging exclusively to userId."
+    }
+  }
+}

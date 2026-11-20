@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<resources>
+    <string name="firestore_database_id" translatable="false">ai-studio-android-dreamydi-90955e35-593c-4409-bd9e-d7f5aef69751</string>
+    <string name="recaptcha_site_key" translatable="false">6Ldo7CguAAAAAEiJYuKfw8ghCQFIWRvRElz737DV</string>
+</resources>

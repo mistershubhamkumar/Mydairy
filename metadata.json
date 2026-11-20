@@ -1,0 +1,6 @@
+{
+  "name": "My Diary",
+  "description": "My Diary - Secret Feelings: A cute anime aesthetic personal diary with mood tracker, dream journal, voice diary, photo gallery, privacy lock, backup, and Gemini AI diary companion.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

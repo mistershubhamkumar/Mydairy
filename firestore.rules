@@ -1,0 +1,370 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Global safety net: default deny everything
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Core primitives
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isValidMood(m) {
+      return m in ['HAPPY', 'SAD', 'EXCITED', 'RELAXED', 'ANGRY', 'ROMANTIC', 'LONELY', 'GRATEFUL', 'ANXIOUS', 'MOTIVATED'];
+    }
+
+    function isValidDreamCategory(c) {
+      return c in ['BEAUTIFUL', 'NIGHTMARE', 'ROMANTIC', 'FANTASY', 'WEIRD', 'LUCID'];
+    }
+
+    function isValidDateKey(d) {
+      return d is string && d.size() == 10 && d.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$');
+    }
+
+    function isValidStringList(arr, maxLen) {
+      return arr is list && arr.size() <= maxLen && (arr.size() == 0 || arr[0] is string);
+    }
+
+    function isValidTimestamp(ts) {
+      return ts is timestamp && ts <= request.time;
+    }
+
+    // Entity validators
+    function isValidUserProfile(data, userId) {
+      return data.userId is string && data.userId == userId &&
+             data.displayName is string && data.displayName.size() >= 1 && data.displayName.size() <= 60 &&
+             data.email is string && data.email.size() <= 120 &&
+             data.bio is string && data.bio.size() <= 300 &&
+             data.avatarKey is string && data.avatarKey.size() >= 1 && data.avatarKey.size() <= 300 &&
+             data.selectedThemeId is string && data.selectedThemeId.size() >= 1 && data.selectedThemeId.size() <= 40 &&
+             data.selectedFontId is string && data.selectedFontId.size() >= 1 && data.selectedFontId.size() <= 40 &&
+             data.mascotId is string && data.mascotId.size() >= 1 && data.mascotId.size() <= 40 &&
+             data.animationsEnabled is bool &&
+             isValidTimestamp(data.createdAt) &&
+             isValidTimestamp(data.updatedAt);
+    }
+
+    function isValidDiaryEntry(data, userId) {
+      return data.userId is string && data.userId == userId &&
+             data.title is string && data.title.size() <= 150 &&
+             data.content is string && data.content.size() <= 50000 &&
+             isValidMood(data.mood) &&
+             data.moodScore is int && data.moodScore >= 1 && data.moodScore <= 10 &&
+             data.categoryId is string && data.categoryId.size() >= 1 && data.categoryId.size() <= 60 &&
+             isValidDateKey(data.dateKey) &&
+             data.entryTimeMillis is int && data.entryTimeMillis >= 0 &&
+             isValidStringList(data.tags, 15) &&
+             isValidStringList(data.photoUris, 20) &&
+             data.locationLabel is string && data.locationLabel.size() <= 120 &&
+             isValidStringList(data.stickerIds, 15) &&
+             data.backgroundStyle is string && data.backgroundStyle.size() >= 1 && data.backgroundStyle.size() <= 40 &&
+             data.fontStyle is string && data.fontStyle.size() >= 1 && data.fontStyle.size() <= 40 &&
+             data.textColorHex is string && data.textColorHex.size() <= 12 &&
+             data.textAlign in ['START', 'CENTER', 'END'] &&
+             data.fontSizeSp is int && data.fontSizeSp >= 12 && data.fontSizeSp <= 28 &&
+             data.boldEnabled is bool &&
+             data.italicEnabled is bool &&
+             data.underlineEnabled is bool &&
+             data.highlightEnabled is bool &&
+             data.favorite is bool &&
+             data.privateLocked is bool &&
+             data.deleted is bool &&
+             data.deletedAtMillis is int && data.deletedAtMillis >= 0 &&
+             data.wordCount is int && data.wordCount >= 0 && data.wordCount <= 100000 &&
+             data.charCount is int && data.charCount >= 0 && data.charCount <= 500000 &&
+             data.reminderTimeMillis is int && data.reminderTimeMillis >= 0 &&
+             isValidTimestamp(data.createdAt) &&
+             isValidTimestamp(data.updatedAt);
+    }
+
+    function isValidMoodLog(data, userId) {
+      return data.userId is string && data.userId == userId &&
+             isValidMood(data.mood) &&
+             data.score is int && data.score >= 1 && data.score <= 10 &&
+             data.note is string && data.note.size() <= 500 &&
+             isValidDateKey(data.dateKey) &&
+             data.loggedAtMillis is int && data.loggedAtMillis >= 0 &&
+             isValidTimestamp(data.createdAt) &&
+             isValidTimestamp(data.updatedAt);
+    }
+
+    function isValidDreamEntry(data, userId) {
+      return data.userId is string && data.userId == userId &&
+             data.title is string && data.title.size() >= 1 && data.title.size() <= 150 &&
+             data.description is string && data.description.size() <= 20000 &&
+             isValidDreamCategory(data.category) &&
+             isValidMood(data.mood) &&
+             isValidDateKey(data.dateKey) &&
+             isValidStringList(data.tags, 15) &&
+             isValidStringList(data.imageUris, 10) &&
+             data.favorite is bool &&
+             data.deleted is bool &&
+             data.deletedAtMillis is int && data.deletedAtMillis >= 0 &&
+             isValidTimestamp(data.createdAt) &&
+             isValidTimestamp(data.updatedAt);
+    }
+
+    function isValidVoiceNote(data, userId) {
+      return data.userId is string && data.userId == userId &&
+             data.title is string && data.title.size() >= 1 && data.title.size() <= 120 &&
+             data.description is string && data.description.size() <= 1000 &&
+             data.filePath is string && data.filePath.size() >= 1 && data.filePath.size() <= 500 &&
+             data.durationSeconds is int && data.durationSeconds >= 0 && data.durationSeconds <= 36000 &&
+             isValidDateKey(data.dateKey) &&
+             data.recordedAtMillis is int && data.recordedAtMillis >= 0 &&
+             data.favorite is bool &&
+             data.deleted is bool &&
+             data.deletedAtMillis is int && data.deletedAtMillis >= 0 &&
+             isValidTimestamp(data.createdAt) &&
+             isValidTimestamp(data.updatedAt);
+    }
+
+    function isValidPhotoMemory(data, userId) {
+      return data.userId is string && data.userId == userId &&
+             data.mediaUri is string && data.mediaUri.size() >= 1 && data.mediaUri.size() <= 600 &&
+             data.mediaType in ['PHOTO', 'VIDEO'] &&
+             data.albumName is string && data.albumName.size() >= 1 && data.albumName.size() <= 80 &&
+             data.caption is string && data.caption.size() <= 500 &&
+             isValidDateKey(data.dateKey) &&
+             isValidStringList(data.tags, 15) &&
+             data.favorite is bool &&
+             data.deleted is bool &&
+             data.deletedAtMillis is int && data.deletedAtMillis >= 0 &&
+             isValidTimestamp(data.createdAt) &&
+             isValidTimestamp(data.updatedAt);
+    }
+
+    function isValidDiaryCategory(data, userId) {
+      return data.userId is string && data.userId == userId &&
+             data.name is string && data.name.size() >= 1 && data.name.size() <= 60 &&
+             data.iconKey is string && data.iconKey.size() >= 1 && data.iconKey.size() <= 40 &&
+             data.colorHex is string && data.colorHex.size() >= 4 && data.colorHex.size() <= 10 &&
+             data.coverStyle is string && data.coverStyle.size() >= 1 && data.coverStyle.size() <= 40 &&
+             isValidTimestamp(data.createdAt) &&
+             isValidTimestamp(data.updatedAt);
+    }
+
+    function isValidBackupRecord(data, userId) {
+      return data.userId is string && data.userId == userId &&
+             data.label is string && data.label.size() >= 1 && data.label.size() <= 120 &&
+             data.format in ['CLOUD', 'JSON', 'TXT', 'PDF'] &&
+             data.entryCount is int && data.entryCount >= 0 && data.entryCount <= 100000 &&
+             data.dreamCount is int && data.dreamCount >= 0 && data.dreamCount <= 100000 &&
+             data.moodCount is int && data.moodCount >= 0 && data.moodCount <= 100000 &&
+             isValidTimestamp(data.createdAt);
+    }
+
+    // 1. User Profile
+    match /users/{userId} {
+      allow get: if isOwner(userId) && isValidId(userId);
+      allow list: if false;
+
+      allow create: if isOwner(userId) &&
+                       isValidId(userId) &&
+                       incoming().keys().hasAll(['userId', 'displayName', 'email', 'bio', 'avatarKey', 'selectedThemeId', 'selectedFontId', 'mascotId', 'animationsEnabled', 'createdAt', 'updatedAt']) &&
+                       incoming().keys().hasOnly(['userId', 'displayName', 'email', 'bio', 'avatarKey', 'selectedThemeId', 'selectedFontId', 'mascotId', 'animationsEnabled', 'createdAt', 'updatedAt']) &&
+                       isValidUserProfile(incoming(), userId);
+
+      allow update: if isOwner(userId) &&
+                       isValidId(userId) &&
+                       isValidUserProfile(incoming(), userId) &&
+                       incoming().userId == existing().userId &&
+                       incoming().createdAt == existing().createdAt &&
+                       incoming().diff(existing()).affectedKeys().hasOnly(['displayName', 'email', 'bio', 'avatarKey', 'selectedThemeId', 'selectedFontId', 'mascotId', 'animationsEnabled', 'updatedAt']);
+
+      allow delete: if isOwner(userId) && isValidId(userId);
+
+      // 2. Diary Entries
+      match /entries/{entryId} {
+        allow get: if isOwner(userId) && isValidId(entryId);
+        allow list: if isOwner(userId);
+
+        allow create: if isOwner(userId) &&
+                         isValidId(entryId) &&
+                         incoming().keys().hasAll([
+                           'userId', 'title', 'content', 'mood', 'moodScore', 'categoryId', 'dateKey',
+                           'entryTimeMillis', 'tags', 'photoUris', 'locationLabel', 'stickerIds',
+                           'backgroundStyle', 'fontStyle', 'textColorHex', 'textAlign', 'fontSizeSp',
+                           'boldEnabled', 'italicEnabled', 'underlineEnabled', 'highlightEnabled',
+                           'favorite', 'privateLocked', 'deleted', 'deletedAtMillis',
+                           'wordCount', 'charCount', 'reminderTimeMillis', 'createdAt', 'updatedAt'
+                         ]) &&
+                         incoming().keys().hasOnly([
+                           'userId', 'title', 'content', 'mood', 'moodScore', 'categoryId', 'dateKey',
+                           'entryTimeMillis', 'tags', 'photoUris', 'locationLabel', 'stickerIds',
+                           'backgroundStyle', 'fontStyle', 'textColorHex', 'textAlign', 'fontSizeSp',
+                           'boldEnabled', 'italicEnabled', 'underlineEnabled', 'highlightEnabled',
+                           'favorite', 'privateLocked', 'deleted', 'deletedAtMillis',
+                           'wordCount', 'charCount', 'reminderTimeMillis', 'createdAt', 'updatedAt'
+                         ]) &&
+                         isValidDiaryEntry(incoming(), userId);
+
+        allow update: if isOwner(userId) &&
+                         isValidId(entryId) &&
+                         isValidDiaryEntry(incoming(), userId) &&
+                         incoming().userId == existing().userId &&
+                         incoming().createdAt == existing().createdAt && (
+                           incoming().diff(existing()).affectedKeys().hasOnly([
+                             'title', 'content', 'mood', 'moodScore', 'categoryId', 'dateKey',
+                             'entryTimeMillis', 'tags', 'photoUris', 'locationLabel', 'stickerIds',
+                             'backgroundStyle', 'fontStyle', 'textColorHex', 'textAlign', 'fontSizeSp',
+                             'boldEnabled', 'italicEnabled', 'underlineEnabled', 'highlightEnabled',
+                             'favorite', 'privateLocked', 'wordCount', 'charCount', 'reminderTimeMillis', 'updatedAt'
+                           ]) ||
+                           incoming().diff(existing()).affectedKeys().hasOnly(['favorite', 'updatedAt']) ||
+                           incoming().diff(existing()).affectedKeys().hasOnly(['privateLocked', 'updatedAt']) ||
+                           incoming().diff(existing()).affectedKeys().hasOnly(['deleted', 'deletedAtMillis', 'updatedAt'])
+                         );
+
+        allow delete: if isOwner(userId) && isValidId(entryId);
+      }
+
+      // 3. Mood Logs
+      match /moods/{moodId} {
+        allow get: if isOwner(userId) && isValidId(moodId);
+        allow list: if isOwner(userId);
+
+        allow create: if isOwner(userId) &&
+                         isValidId(moodId) &&
+                         incoming().keys().hasAll(['userId', 'mood', 'score', 'note', 'dateKey', 'loggedAtMillis', 'createdAt', 'updatedAt']) &&
+                         incoming().keys().hasOnly(['userId', 'mood', 'score', 'note', 'dateKey', 'loggedAtMillis', 'createdAt', 'updatedAt']) &&
+                         isValidMoodLog(incoming(), userId);
+
+        allow update: if isOwner(userId) &&
+                         isValidId(moodId) &&
+                         isValidMoodLog(incoming(), userId) &&
+                         incoming().userId == existing().userId &&
+                         incoming().createdAt == existing().createdAt &&
+                         incoming().diff(existing()).affectedKeys().hasOnly(['mood', 'score', 'note', 'dateKey', 'loggedAtMillis', 'updatedAt']);
+
+        allow delete: if isOwner(userId) && isValidId(moodId);
+      }
+
+      // 4. Dream Journal
+      match /dreams/{dreamId} {
+        allow get: if isOwner(userId) && isValidId(dreamId);
+        allow list: if isOwner(userId);
+
+        allow create: if isOwner(userId) &&
+                         isValidId(dreamId) &&
+                         incoming().keys().hasAll(['userId', 'title', 'description', 'category', 'mood', 'dateKey', 'tags', 'imageUris', 'favorite', 'deleted', 'deletedAtMillis', 'createdAt', 'updatedAt']) &&
+                         incoming().keys().hasOnly(['userId', 'title', 'description', 'category', 'mood', 'dateKey', 'tags', 'imageUris', 'favorite', 'deleted', 'deletedAtMillis', 'createdAt', 'updatedAt']) &&
+                         isValidDreamEntry(incoming(), userId);
+
+        allow update: if isOwner(userId) &&
+                         isValidId(dreamId) &&
+                         isValidDreamEntry(incoming(), userId) &&
+                         incoming().userId == existing().userId &&
+                         incoming().createdAt == existing().createdAt && (
+                           incoming().diff(existing()).affectedKeys().hasOnly(['title', 'description', 'category', 'mood', 'dateKey', 'tags', 'imageUris', 'favorite', 'updatedAt']) ||
+                           incoming().diff(existing()).affectedKeys().hasOnly(['favorite', 'updatedAt']) ||
+                           incoming().diff(existing()).affectedKeys().hasOnly(['deleted', 'deletedAtMillis', 'updatedAt'])
+                         );
+
+        allow delete: if isOwner(userId) && isValidId(dreamId);
+      }
+
+      // 5. Voice Diary
+      match /voiceNotes/{voiceId} {
+        allow get: if isOwner(userId) && isValidId(voiceId);
+        allow list: if isOwner(userId);
+
+        allow create: if isOwner(userId) &&
+                         isValidId(voiceId) &&
+                         incoming().keys().hasAll(['userId', 'title', 'description', 'filePath', 'durationSeconds', 'dateKey', 'recordedAtMillis', 'favorite', 'deleted', 'deletedAtMillis', 'createdAt', 'updatedAt']) &&
+                         incoming().keys().hasOnly(['userId', 'title', 'description', 'filePath', 'durationSeconds', 'dateKey', 'recordedAtMillis', 'favorite', 'deleted', 'deletedAtMillis', 'createdAt', 'updatedAt']) &&
+                         isValidVoiceNote(incoming(), userId);
+
+        allow update: if isOwner(userId) &&
+                         isValidId(voiceId) &&
+                         isValidVoiceNote(incoming(), userId) &&
+                         incoming().userId == existing().userId &&
+                         incoming().createdAt == existing().createdAt && (
+                           incoming().diff(existing()).affectedKeys().hasOnly(['title', 'description', 'favorite', 'updatedAt']) ||
+                           incoming().diff(existing()).affectedKeys().hasOnly(['deleted', 'deletedAtMillis', 'updatedAt'])
+                         );
+
+        allow delete: if isOwner(userId) && isValidId(voiceId);
+      }
+
+      // 6. Photo & Video Memories
+      match /memories/{memoryId} {
+        allow get: if isOwner(userId) && isValidId(memoryId);
+        allow list: if isOwner(userId);
+
+        allow create: if isOwner(userId) &&
+                         isValidId(memoryId) &&
+                         incoming().keys().hasAll(['userId', 'mediaUri', 'mediaType', 'albumName', 'caption', 'dateKey', 'tags', 'favorite', 'deleted', 'deletedAtMillis', 'createdAt', 'updatedAt']) &&
+                         incoming().keys().hasOnly(['userId', 'mediaUri', 'mediaType', 'albumName', 'caption', 'dateKey', 'tags', 'favorite', 'deleted', 'deletedAtMillis', 'createdAt', 'updatedAt']) &&
+                         isValidPhotoMemory(incoming(), userId);
+
+        allow update: if isOwner(userId) &&
+                         isValidId(memoryId) &&
+                         isValidPhotoMemory(incoming(), userId) &&
+                         incoming().userId == existing().userId &&
+                         incoming().createdAt == existing().createdAt && (
+                           incoming().diff(existing()).affectedKeys().hasOnly(['albumName', 'caption', 'dateKey', 'tags', 'favorite', 'updatedAt']) ||
+                           incoming().diff(existing()).affectedKeys().hasOnly(['favorite', 'updatedAt']) ||
+                           incoming().diff(existing()).affectedKeys().hasOnly(['deleted', 'deletedAtMillis', 'updatedAt'])
+                         );
+
+        allow delete: if isOwner(userId) && isValidId(memoryId);
+      }
+
+      // 7. Custom Diary Categories
+      match /categories/{categoryId} {
+        allow get: if isOwner(userId) && isValidId(categoryId);
+        allow list: if isOwner(userId);
+
+        allow create: if isOwner(userId) &&
+                         isValidId(categoryId) &&
+                         incoming().keys().hasAll(['userId', 'name', 'iconKey', 'colorHex', 'coverStyle', 'createdAt', 'updatedAt']) &&
+                         incoming().keys().hasOnly(['userId', 'name', 'iconKey', 'colorHex', 'coverStyle', 'createdAt', 'updatedAt']) &&
+                         isValidDiaryCategory(incoming(), userId);
+
+        allow update: if isOwner(userId) &&
+                         isValidId(categoryId) &&
+                         isValidDiaryCategory(incoming(), userId) &&
+                         incoming().userId == existing().userId &&
+                         incoming().createdAt == existing().createdAt &&
+                         incoming().diff(existing()).affectedKeys().hasOnly(['name', 'iconKey', 'colorHex', 'coverStyle', 'updatedAt']);
+
+        allow delete: if isOwner(userId) && isValidId(categoryId);
+      }
+
+      // 8. Backup & Export History
+      match /backups/{backupId} {
+        allow get: if isOwner(userId) && isValidId(backupId);
+        allow list: if isOwner(userId);
+
+        allow create: if isOwner(userId) &&
+                         isValidId(backupId) &&
+                         incoming().keys().hasAll(['userId', 'label', 'format', 'entryCount', 'dreamCount', 'moodCount', 'createdAt']) &&
+                         incoming().keys().hasOnly(['userId', 'label', 'format', 'entryCount', 'dreamCount', 'moodCount', 'createdAt']) &&
+                         isValidBackupRecord(incoming(), userId);
+
+        allow update: if false;
+        allow delete: if isOwner(userId) && isValidId(backupId);
+      }
+    }
+  }
+}
